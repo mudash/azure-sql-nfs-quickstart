@@ -11,3 +11,7 @@ Before using this Quick Start, you need to have NFS Volumes enabled in your Azur
 
 # Deployment
 
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmudash%2Fazure-sql-nfs-quickstart%2FDev%2FSQL_Master_Template.json" target="_blank">
+<img src="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.png"/>
+</a>
+
