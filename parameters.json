@@ -1,0 +1,51 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "value": "westus"
+        },
+        "virtualMachineName": {
+            "value": "SQLManual"
+        },
+        "virtualMachineSize": {
+            "value": "Standard_DS12_v2"
+        },
+        "adminUsername": {
+            "value": "sql-admin"
+        },
+        "virtualNetworkName": {
+            "value": "ms.testdrive.nfs-vnet"
+        },
+        "networkInterfaceName": {
+            "value": "sqlmanual922"
+        },
+        "networkSecurityGroupName": {
+            "value": "SQLManual-nsg"
+        },
+        "adminPassword": {
+            "value": "DemoPassword1"
+        },
+        "diagnosticsStorageAccountName": {
+            "value": "msnfstestdrivediag763"
+        },
+        "diagnosticsStorageAccountType": {
+            "value": "Standard_LRS"
+        },
+        "diagnosticsStorageAccountId": {
+            "value": "Microsoft.Storage/storageAccounts/msnfstestdrivediag763"
+        },
+        "subnetName": {
+            "value": "AzureVMs"
+        },
+        "publicIpAddressName": {
+            "value": "SQLManual-ip"
+        },
+        "publicIpAddressType": {
+            "value": "Dynamic"
+        },
+        "publicIpAddressSku": {
+            "value": "Basic"
+        }
+    }
+}
