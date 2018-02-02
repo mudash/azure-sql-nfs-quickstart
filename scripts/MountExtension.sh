@@ -10,3 +10,4 @@ mkdir -p /mnt/sqllog
 
 
 echo $1
+ping $1
