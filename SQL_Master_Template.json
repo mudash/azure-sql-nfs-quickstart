@@ -11,7 +11,7 @@
     },
     "sqlDataVoumeSizeGB": {
       "type": "int",
-      "defaultValue": "10",
+      "defaultValue": 10,
       "metadata": {
         "description": "Size of the SQL Data Volume"
       }
@@ -25,7 +25,7 @@
     },
     "sqlLogVoumeSizeGB": {
       "type": "int",
-      "defaultValue": "10",
+      "defaultValue": 10,
       "metadata": {
         "description": "Size of the SQL Log Volume"
       }
@@ -72,34 +72,39 @@
     "apiVersion": "2017-08-15",
     "sqlPublicIpAddressSku": "Basic",
     "sqlPublicIpAddressType": "Dynamic",
-    "sqlPublicIpAddressName": "sql-vm-pip",
-    "sqlVMName": [ "concat('sql-vm-'", "uniqueString(resourceGroup().id))" ],
+    "sqlPublicIpAddressName": "[concat('sql-vm-pip-', uniqueString(resourceGroup().id))]",
+    "sqlVMName": "[concat('sql-vm-', uniqueString(resourceGroup().id))]",
     "sqlVmSize": "Standard_DS12_v2",
-    "sqlVMNicName": "vm-sql-nic",
-    "sqlNSGName": "sql-nsg",
-    "serviceLevel": "Standard",
-    "dataVolExportPath": "concat(parameters('sqlNFSDataVolumeName'),'-export')",
-    "logVolExportPath": "concat(parameters('sqlNFSLogVolumeName'),'-export')",
-    "diagStorageAccountName": "concat('diagstor', uniqueString(resourceGroup().id))",
-    "diagStorageAccountType": "Standard_LRS"
-  },
+    "sqlVMNicName": "[concat('vm-sql-nic-', uniqueString(resourceGroup().id))]",
+    "sqlNSGName": "[concat('sql-nsg-', uniqueString(resourceGroup().id))]",
+    "volServiceLevel": "Standard",
+    "dataVolExportPath": "[concat(parameters('sqlNFSDataVolumeName'),'-export')]",
+    "logVolExportPath": "[concat(parameters('sqlNFSLogVolumeName'),'-export')]",
+    "diagStorageAccountName": "[concat('diagstor', uniqueString(resourceGroup().id))]",
+    "diagStorageAccountType": "Standard_LRS",
+    "config-extensionScriptFolder": "CustomScripts",
+    "config-extensionScriptFileName": "config-extension.sh",
+    "sql-vm-extensionScriptFolder": "CustomScripts",
+    "sql-vm-extensionScriptFileName": "sql-vm-extension.sh",
+    "nfs-data-vol-size": "[mul(parameters('sqlDataVoumeSizeGB'), 1073741824)]",
+    "nfs-log-vol-size": "[mul(parameters('sqlLogVoumeSizeGB'), 1073741824)]"
+   },
   "resources": [
     {
+      "type": "Microsoft.NFS/Volumes",
       "name": "[parameters('sqlNFSDataVolumeName')]",
       "apiVersion": "[variables('apiVersion')]",
-      "type": "Microsoft.NFS/Volumes",
       "location": "[parameters('location')]",
       "properties": {
-        "serviceLevel": "[variables('serviceLevel')]",
-        "usageThreshold": "[mul(parameters('sqlDataVoumeSizeGB'), 1073741824)]",
-        "creationToken": "[variables('dataVolExportPath')]",
-        "provisionedSize": "99"
+        "serviceLevel": "[variables('volServiceLevel')]",
+        "usageThreshold": "[variables('nfs-data-vol-size')]",
+        "creationToken": "[variables('dataVolExportPath')]"
       },
       "resources": [
         {
+          "type": "mountTargets",
           "name": "default",
           "apiVersion": "[variables('apiVersion')]",
-          "type": "mountTargets",
           "location": "[parameters('location')]",
           "properties": {
             "fileSystemId": "[reference(concat('Microsoft.NFS/Volumes/', parameters('sqlNFSDataVolumeName')), '2017-08-15').fileSystemId]"
@@ -111,21 +116,20 @@
       ]
     },
     {
+      "type": "Microsoft.NFS/Volumes",
       "name": "[parameters('sqlNFSLogVolumeName')]",
       "apiVersion": "[variables('apiVersion')]",
-      "type": "Microsoft.NFS/Volumes",
       "location": "[parameters('location')]",
       "properties": {
-        "serviceLevel": "[variables('serviceLevel')]",
-        "usageThreshold": "[mul(parameters('sqlLogVoumeSizeGB'), 1073741824)]",
-        "creationToken": "[variables('dataVolExportPath')]",
-        "provisionedSize": "99"
+        "serviceLevel": "[variables('volServiceLevel')]",
+        "usageThreshold": "[variables('nfs-log-vol-size')]",
+        "creationToken": "[variables('logVolExportPath')]"
       },
       "resources": [
         {
+          "type": "mountTargets",
           "name": "default",
           "apiVersion": "[variables('apiVersion')]",
-          "type": "mountTargets",
           "location": "[parameters('location')]",
           "properties": {
             "fileSystemId": "[reference(concat('Microsoft.NFS/Volumes/', parameters('sqlNFSLogVolumeName')), '2017-08-15').fileSystemId]"
@@ -137,13 +141,15 @@
       ]
     },
     {
-      "name": "variables('sqlVMName')",
+      "name": "[variables('sqlVMName')]",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2016-04-30-preview",
       "location": "[parameters('location')]",
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', variables('sqlVMNicName'))]",
-        "[concat('Microsoft.Storage/storageAccounts/', variables('diagStorageAccountName'))]"
+        "[concat('Microsoft.Storage/storageAccounts/', variables('diagStorageAccountName'))]",
+        "[concat('Microsoft.NFS/Volumes/', parameters('sqlNFSDataVolumeName'),'/mountTargets/default')]",
+        "[concat('Microsoft.NFS/Volumes/', parameters('sqlNFSLogVolumeName'),'/mountTargets/default')]"
       ],
       "properties": {
         "osProfile": {
@@ -179,39 +185,39 @@
         "diagnosticsProfile": {
           "bootDiagnostics": {
             "enabled": true,
-            "storageUri": "[reference(resourceId('ms.nfs.testdrive', 'Microsoft.Storage/storageAccounts', parameters('diagStorageAccountName')), '2015-06-15').primaryEndpoints['blob']]"
+            "storageUri": "[reference(resourceId('ms.nfs.testdrive', 'Microsoft.Storage/storageAccounts', variables('diagStorageAccountName')), '2015-06-15').primaryEndpoints['blob']]"
           }
         }
       },
       "resources": [
         {
-          "name": "app-config",
+          "name": "sql-vm-extension",
           "type": "extensions",
-          "location": "[resourceGroup().location]",
-          "apiVersion": "2015-06-15",
+          "location": "[parameters('location')]",
+          "apiVersion": "2016-03-30",
           "dependsOn": [
             "[concat('Microsoft.Compute/virtualMachines/', variables('sqlVMName'))]"
           ],
           "tags": {
-            "displayName": "volumeextension"
+            "displayName": "sql-vm-extension"
           },
           "properties": {
-            "publisher": "Microsoft.Azure.Extensions",
-            "type": "CustomScript",
-            "typeHandlerVersion": "2.0",
+            "publisher": "Microsoft.OSTCExtensions",
+            "type": "CustomScriptForLinux",
+            "typeHandlerVersion": "1.4",
             "autoUpgradeMinorVersion": true,
             "settings": {
               "fileUris": [
                 "https://raw.githubusercontent.com/mudash/azure-sql-nfs-quickstart/Dev/scripts/MountExtension.sh"
               ],
-              "commandToExecute": "sh MountExtension.sh"
+              "commandToExecute": "[concat('sh ', 'MountExtension.sh', ' ', reference(concat('Microsoft.NFS/Volumes/', parameters('sqlNFSDataVolumeName'),'/mountTargets/default'), '2017-08-15').ipAddress )]"
             }
           }
         }
       ]
     },
     {
-      "name": "variables('diagStorageAccountName')",
+      "name": "[variables('diagStorageAccountName')]",
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2015-06-15",
       "location": "[parameters('location')]",
@@ -220,7 +226,7 @@
       }
     },
     {
-      "name": "variables('sqlVMNicName')",
+      "name": "[variables('sqlVMNicName')]",
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2016-09-01",
       "location": "[parameters('location')]",
@@ -238,18 +244,18 @@
               },
               "privateIPAllocationMethod": "Dynamic",
               "publicIpAddress": {
-                "id": "[resourceId('ms.nfs.testdrive','Microsoft.Network/publicIpAddresses', parameters('sqlPublicIpAddressName'))]"
+                "id": "[resourceId('ms.nfs.testdrive','Microsoft.Network/publicIpAddresses', variables('sqlPublicIpAddressName'))]"
               }
             }
           }
         ],
         "networkSecurityGroup": {
-          "id": "[resourceId('ms.nfs.testdrive', 'Microsoft.Network/networkSecurityGroups', parameters('sqlNSGName'))]"
+          "id": "[resourceId('ms.nfs.testdrive', 'Microsoft.Network/networkSecurityGroups', variables('sqlNSGName'))]"
         }
       }
     },
     {
-      "name": "variables('sqlPublicIpAddressName')",
+      "name": "[variables('sqlPublicIpAddressName')]",
       "type": "Microsoft.Network/publicIpAddresses",
       "apiVersion": "2017-08-01",
       "location": "[parameters('location')]",
@@ -261,7 +267,7 @@
       }
     },
     {
-      "name": "variables('sqlNSGName')",
+      "name": "[variables('sqlNSGName')]",
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2017-06-01",
       "location": "[parameters('location')]",
