@@ -137,7 +137,7 @@
       ]
     },
     {
-      "name": "[variables('sqlVMName')]",
+      "name": "variables('sqlVMName')",
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2016-04-30-preview",
       "location": "[parameters('location')]",
@@ -211,7 +211,7 @@
       ]
     },
     {
-      "name": "[variables('diagStorageAccountName')]",
+      "name": "variables('diagStorageAccountName')",
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2015-06-15",
       "location": "[parameters('location')]",
@@ -220,7 +220,7 @@
       }
     },
     {
-      "name": "[variables('sqlVMNicName')]",
+      "name": "variables('sqlVMNicName')",
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2016-09-01",
       "location": "[parameters('location')]",
@@ -249,7 +249,7 @@
       }
     },
     {
-      "name": "[variables('sqlPublicIpAddressName')]",
+      "name": "variables('sqlPublicIpAddressName')",
       "type": "Microsoft.Network/publicIpAddresses",
       "apiVersion": "2017-08-01",
       "location": "[parameters('location')]",
@@ -261,7 +261,7 @@
       }
     },
     {
-      "name": "[variables('sqlNSGName')]",
+      "name": "variables('sqlNSGName')",
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2017-06-01",
       "location": "[parameters('location')]",
